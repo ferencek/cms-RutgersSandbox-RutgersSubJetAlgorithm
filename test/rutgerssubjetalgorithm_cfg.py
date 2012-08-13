@@ -19,7 +19,7 @@ options.register('wantSummary',
 )
 ## 'maxEvents' is already registered by the Framework, changing default value
 options.setDefault('maxEvents', 10)
-print options
+
 options.parseArguments()
 
 import FWCore.ParameterSet.Config as cms
@@ -52,19 +52,8 @@ process.source = cms.Source("PoolSource",
 ## Load module that produces GenParticlesForJets
 process.load('RecoJets.Configuration.GenJetParticles_cff')
 
-## Initialize RutgersSubJetProducer
-from RecoJets.JetProducers.GenJetParameters_cfi import *
-from RecoJets.JetProducers.AnomalousCellParameters_cfi import *
-
-process.ak5GenJetsRU = cms.EDProducer('RutgersSubJetProducer',
-    GenJetParameters,
-    AnomalousCellParameters,
-    jetAlgorithm = cms.string("AntiKt"),
-    jetReclusterAlgorithm = cms.string("Kt"),
-    rParam       = cms.double(0.5),
-    nSubjets     = cms.uint32(2),
-    jetCollInstanceName = cms.string("SubJets")
-)
+## Load RutgersSubJetProducer
+process.load("RutgersSandbox.RutgersSubJetAlgorithm.ak5GenJetsRU_cfi")
 
 ## Output Module Configuration
 process.out = cms.OutputModule("PoolOutputModule",
