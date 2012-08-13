@@ -14,7 +14,7 @@
 //
 // Original Author:  Dinko Ferencek
 //         Created:  Thu Aug  9 16:02:58 CDT 2012
-// $Id$
+// $Id: RutgersSubJetAlgorithm.h,v 1.1 2012/08/11 03:48:36 ferencek Exp $
 //
 // 
 
@@ -71,6 +71,7 @@ class RutgersSubJetAlgorithm
       JetDefPtr                fjJetReclusterDefinition_;
       ActiveAreaSpecPtr        fjActiveArea_;
       AreaDefinitionPtr        fjAreaDefinition_;
+      AreaDefinitionPtr        fjReclusterAreaDefinition_;
 };
 
 #endif

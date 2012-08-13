@@ -25,11 +25,11 @@ RutgersSubJetAlgorithm::RutgersSubJetAlgorithm(const edm::ParameterSet& iConfig)
       <<jetAlgorithm_<<", use CambridgeAachen | Kt | AntiKt"<<std::endl;
 
   if (jetReclusterAlgorithm_=="Kt")
-    fjJetReclusterDefinition_= JetDefPtr( new fastjet::JetDefinition(fastjet::kt_algorithm, 2*rParam_) );
+    fjJetReclusterDefinition_= JetDefPtr( new fastjet::JetDefinition(fastjet::kt_algorithm, rParam_) );
   else if (jetReclusterAlgorithm_=="CambridgeAachen")
-    fjJetReclusterDefinition_= JetDefPtr( new fastjet::JetDefinition(fastjet::cambridge_algorithm, 2*rParam_) );
+    fjJetReclusterDefinition_= JetDefPtr( new fastjet::JetDefinition(fastjet::cambridge_algorithm, rParam_) );
   else if (jetReclusterAlgorithm_=="AntiKt")
-    fjJetReclusterDefinition_= JetDefPtr( new fastjet::JetDefinition(fastjet::antikt_algorithm, 2*rParam_) );
+    fjJetReclusterDefinition_= JetDefPtr( new fastjet::JetDefinition(fastjet::antikt_algorithm, rParam_) );
   else
     throw cms::Exception("Invalid jetAlgorithm")
       <<"Jet algorithm for RutgersSubJetProducer is invalid: "
@@ -56,10 +56,11 @@ RutgersSubJetAlgorithm::RutgersSubJetAlgorithm(const edm::ParameterSet& iConfig)
     {
       fjActiveArea_     = ActiveAreaSpecPtr(new fastjet::GhostedAreaSpec(ghostEtaMax,activeAreaRepeats,ghostArea));
       fjActiveArea_->set_fj2_placement(true);
+      fjAreaDefinition_ = AreaDefinitionPtr( new fastjet::AreaDefinition(fastjet::active_area, *fjActiveArea_ ) );
       if ( !useExplicitGhosts_ )
-        fjAreaDefinition_ = AreaDefinitionPtr( new fastjet::AreaDefinition(fastjet::active_area, *fjActiveArea_ ) );
+        fjReclusterAreaDefinition_ = AreaDefinitionPtr( new fastjet::AreaDefinition(fastjet::active_area, *fjActiveArea_ ) );
       else
-        fjAreaDefinition_ = AreaDefinitionPtr( new fastjet::AreaDefinition(fastjet::active_area_explicit_ghosts, *fjActiveArea_ ) );
+        fjReclusterAreaDefinition_ = AreaDefinitionPtr( new fastjet::AreaDefinition(fastjet::active_area_explicit_ghosts, *fjActiveArea_ ) );
     }
   }
 }
@@ -97,7 +98,7 @@ void RutgersSubJetAlgorithm::run(const std::vector<fastjet::PseudoJet>& fjInputs
     if ( !doAreaFastjet_ )
       fjReclusterSeq_ = ClusterSequencePtr( new fastjet::ClusterSequence( jetIt->constituents(), *fjJetReclusterDefinition_ ) );
     else if (voronoiRfact_ <= 0)
-      fjReclusterSeq_ = ClusterSequencePtr( new fastjet::ClusterSequenceArea( jetIt->constituents(), *fjJetReclusterDefinition_, *fjAreaDefinition_ ) );
+      fjReclusterSeq_ = ClusterSequencePtr( new fastjet::ClusterSequenceArea( jetIt->constituents(), *fjJetReclusterDefinition_, *fjReclusterAreaDefinition_ ) );
     else
       fjReclusterSeq_ = ClusterSequencePtr( new fastjet::ClusterSequenceVoronoiArea( jetIt->constituents(), *fjJetReclusterDefinition_, fastjet::VoronoiAreaSpec(voronoiRfact_) ) );
 
