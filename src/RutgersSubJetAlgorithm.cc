@@ -81,6 +81,9 @@ RutgersSubJetAlgorithm::~RutgersSubJetAlgorithm()
 void RutgersSubJetAlgorithm::run(const std::vector<fastjet::PseudoJet>& fjInputs,
                                  std::vector<CompoundPseudoJet>& compoundJets)
 {
+//   for(std::vector<fastjet::PseudoJet>::const_iterator constIt = fjInputs.begin(); constIt != fjInputs.end(); ++constIt)
+//     std::cout << constIt->px() << "  " << constIt->py() << "  " << constIt->pz() << "  " << constIt->e() << std::endl;
+
   if ( !doAreaFastjet_ )
     fjClusterSeq_  = ClusterSequencePtr( new fastjet::ClusterSequence( fjInputs, *fjJetDefinition_ ) );
   else if (voronoiRfact_ <= 0)
@@ -105,7 +108,7 @@ void RutgersSubJetAlgorithm::run(const std::vector<fastjet::PseudoJet>& fjInputs
     std::vector<fastjet::PseudoJet> reclusteredJets = fastjet::sorted_by_pt( fjReclusterSeq_->inclusive_jets() );
 
     // Can't request more subjets than there are constituents
-    unsigned nConst = jetIt->constituents().size();
+    unsigned nConst = reclusteredJets.front().constituents().size();
     unsigned nSubjets = ( nConst>=nSubjets_ ?  nSubjets_ : nConst );
 
     // Decompose into requested number of subjets
