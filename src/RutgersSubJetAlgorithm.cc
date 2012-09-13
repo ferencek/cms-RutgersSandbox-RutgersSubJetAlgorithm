@@ -10,6 +10,7 @@ RutgersSubJetAlgorithm::RutgersSubJetAlgorithm(const edm::ParameterSet& iConfig)
   , nSubjets_                (iConfig.getParameter<unsigned>     ("nSubjets"))
   , jetPtMin_                (iConfig.getParameter<double>       ("jetPtMin"))
   , doAreaFastjet_           (iConfig.getParameter<bool>         ("doAreaFastjet"))
+  , ghostArea_               (0.01)
   , useExplicitGhosts_       (false)
   , voronoiRfact_            (-9)
 {
@@ -25,11 +26,11 @@ RutgersSubJetAlgorithm::RutgersSubJetAlgorithm(const edm::ParameterSet& iConfig)
       <<jetAlgorithm_<<", use CambridgeAachen | Kt | AntiKt"<<std::endl;
 
   if (jetReclusterAlgorithm_=="Kt")
-    fjJetReclusterDefinition_= JetDefPtr( new fastjet::JetDefinition(fastjet::kt_algorithm, rParam_) );
+    fjJetReclusterDefinition_= JetDefPtr( new fastjet::JetDefinition(fastjet::kt_algorithm, 2*rParam_) );
   else if (jetReclusterAlgorithm_=="CambridgeAachen")
-    fjJetReclusterDefinition_= JetDefPtr( new fastjet::JetDefinition(fastjet::cambridge_algorithm, rParam_) );
+    fjJetReclusterDefinition_= JetDefPtr( new fastjet::JetDefinition(fastjet::cambridge_algorithm, 2*rParam_) );
   else if (jetReclusterAlgorithm_=="AntiKt")
-    fjJetReclusterDefinition_= JetDefPtr( new fastjet::JetDefinition(fastjet::antikt_algorithm, rParam_) );
+    fjJetReclusterDefinition_= JetDefPtr( new fastjet::JetDefinition(fastjet::antikt_algorithm, 2*rParam_) );
   else
     throw cms::Exception("Invalid jetAlgorithm")
       <<"Jet algorithm for RutgersSubJetProducer is invalid: "
@@ -49,18 +50,17 @@ RutgersSubJetAlgorithm::RutgersSubJetAlgorithm(const edm::ParameterSet& iConfig)
     // default Ghost_EtaMax should be 5
     double ghostEtaMax = iConfig.getParameter<double>("Ghost_EtaMax");
     // default Active_Area_Repeats 1
-    int    activeAreaRepeats = iConfig.getParameter<int> ("Active_Area_Repeats");
+    int activeAreaRepeats = iConfig.getParameter<int> ("Active_Area_Repeats");
     // default GhostArea 0.01
-    double ghostArea = iConfig.getParameter<double> ("GhostArea");
+    ghostArea_ = iConfig.getParameter<double> ("GhostArea");
     if ( voronoiRfact_ <= 0 )
     {
-      fjActiveArea_     = ActiveAreaSpecPtr(new fastjet::GhostedAreaSpec(ghostEtaMax,activeAreaRepeats,ghostArea));
+      fjActiveArea_     = ActiveAreaSpecPtr(new fastjet::GhostedAreaSpec(ghostEtaMax, activeAreaRepeats, ghostArea_));
       fjActiveArea_->set_fj2_placement(true);
-      fjAreaDefinition_ = AreaDefinitionPtr( new fastjet::AreaDefinition(fastjet::active_area, *fjActiveArea_ ) );
       if ( !useExplicitGhosts_ )
-        fjReclusterAreaDefinition_ = AreaDefinitionPtr( new fastjet::AreaDefinition(fastjet::active_area, *fjActiveArea_ ) );
+        fjAreaDefinition_ = AreaDefinitionPtr( new fastjet::AreaDefinition(fastjet::active_area, *fjActiveArea_ ) );
       else
-        fjReclusterAreaDefinition_ = AreaDefinitionPtr( new fastjet::AreaDefinition(fastjet::active_area_explicit_ghosts, *fjActiveArea_ ) );
+        fjAreaDefinition_ = AreaDefinitionPtr( new fastjet::AreaDefinition(fastjet::active_area_explicit_ghosts, *fjActiveArea_ ) );
     }
   }
 }
@@ -101,7 +101,20 @@ void RutgersSubJetAlgorithm::run(const std::vector<fastjet::PseudoJet>& fjInputs
     if ( !doAreaFastjet_ )
       fjReclusterSeq_ = ClusterSequencePtr( new fastjet::ClusterSequence( jetIt->constituents(), *fjJetReclusterDefinition_ ) );
     else if (voronoiRfact_ <= 0)
-      fjReclusterSeq_ = ClusterSequencePtr( new fastjet::ClusterSequenceArea( jetIt->constituents(), *fjJetReclusterDefinition_, *fjReclusterAreaDefinition_ ) );
+    {
+      // To recluster the jet using the same ghosts
+      // a. get the constituents of the jet and
+      //    separate the particles and the ghosts
+      //    'constits' will contain the regular particles
+      //    'ghosts'   will contain the ghosts
+      std::vector<fastjet::PseudoJet> constits, ghosts;
+      fastjet::SelectorIsPureGhost().sift(jetIt->constituents(), ghosts, constits);
+      // b. get the "fundamental" ghost area
+      double ghost_area = ghosts.size() ? ghosts[0].area() : ghostArea_;
+      // c. recluster the jet indicating explicitly
+      //    what ghosts to use
+      fjReclusterSeq_ = ClusterSequencePtr( new fastjet::ClusterSequenceActiveAreaExplicitGhosts( constits, *fjJetReclusterDefinition_, ghosts, ghost_area ) );
+    }
     else
       fjReclusterSeq_ = ClusterSequencePtr( new fastjet::ClusterSequenceVoronoiArea( jetIt->constituents(), *fjJetReclusterDefinition_, fastjet::VoronoiAreaSpec(voronoiRfact_) ) );
 

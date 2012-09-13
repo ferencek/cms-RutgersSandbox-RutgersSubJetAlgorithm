@@ -14,7 +14,7 @@
 //
 // Original Author:  Dinko Ferencek
 //         Created:  Thu Aug  9 16:02:58 CDT 2012
-// $Id: RutgersSubJetAlgorithm.h,v 1.1 2012/08/11 03:48:36 ferencek Exp $
+// $Id: RutgersSubJetAlgorithm.h,v 1.2 2012/08/13 23:55:17 ferencek Exp $
 //
 // 
 
@@ -26,7 +26,9 @@
 
 #include "fastjet/JetDefinition.hh"
 #include "fastjet/ClusterSequence.hh"
-#include "fastjet/ClusterSequenceArea.hh"
+#include "fastjet/ClusterSequenceArea.hh" // use this instead of the "usual" ClusterSequence to get area support
+#include "fastjet/ClusterSequenceActiveAreaExplicitGhosts.hh" // and this one for games with subjet clustering
+#include "fastjet/Selector.hh"
 #include "fastjet/PseudoJet.hh"
 #include "fastjet/GhostedAreaSpec.hh"
 
@@ -40,11 +42,11 @@ class RutgersSubJetAlgorithm
       virtual ~RutgersSubJetAlgorithm();
 
       // typedefs
-      typedef boost::shared_ptr<fastjet::ClusterSequence>        ClusterSequencePtr;
-      typedef boost::shared_ptr<fastjet::JetDefinition>          JetDefPtr;
-      typedef boost::shared_ptr<fastjet::GhostedAreaSpec>        ActiveAreaSpecPtr;
-      typedef boost::shared_ptr<fastjet::AreaDefinition>         AreaDefinitionPtr;
-      typedef boost::shared_ptr<fastjet::RangeDefinition>        RangeDefPtr;
+      typedef boost::shared_ptr<fastjet::ClusterSequence>    ClusterSequencePtr;
+      typedef boost::shared_ptr<fastjet::JetDefinition>      JetDefPtr;
+      typedef boost::shared_ptr<fastjet::GhostedAreaSpec>    ActiveAreaSpecPtr;
+      typedef boost::shared_ptr<fastjet::AreaDefinition>     AreaDefinitionPtr;
+      typedef boost::shared_ptr<fastjet::RangeDefinition>    RangeDefPtr;
 
       //
       // member functions
@@ -62,6 +64,7 @@ class RutgersSubJetAlgorithm
       const unsigned           nSubjets_;
       const double             jetPtMin_;
       const bool               doAreaFastjet_;
+      double                   ghostArea_;
       bool                     useExplicitGhosts_;
       double                   voronoiRfact_;
 
@@ -71,7 +74,6 @@ class RutgersSubJetAlgorithm
       JetDefPtr                fjJetReclusterDefinition_;
       ActiveAreaSpecPtr        fjActiveArea_;
       AreaDefinitionPtr        fjAreaDefinition_;
-      AreaDefinitionPtr        fjReclusterAreaDefinition_;
 };
 
 #endif
